@@ -1,0 +1,30 @@
+use std::cmp::min;
+
+pub fn edit_distance(source: &str, target: &str) -> usize {
+    if target.len() == 0 && source.len() == 0 {
+        return 0;
+    }
+    if target.len() == 0 && source.len() > 0{
+        return source.len();
+    }else if target.len() > 0 && source.len() == 0{
+        return target.len();
+    }
+    let m = source.len();
+    let n = target.len();
+    let s1 = source.as_bytes();
+    let s2 = target.as_bytes();
+
+    let mut stock = vec![vec![0; n + 1]; m + 1];
+
+    for i in 1..=m {
+        for j in 1..=n {
+            stock[i][j] = if s1[i - 1] == s2[j - 1] {
+                stock[i - 1][j - 1]
+            } else {
+                1 + min(stock[i - 1][j - 1], min(stock[i - 1][j], stock[i][j - 1]))
+            };
+        }
+    }
+
+    stock[m][n]
+}
