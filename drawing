@@ -1,0 +1,167 @@
+use raster::{ Color, Image };
+use rand::Rng;
+
+pub trait Drawable {
+    fn draw(&self, image: &mut Image);
+
+    fn color() -> raster::Color {
+        let mut rng = rand::thread_rng();
+        Color::rgb(rng.gen_range(0..=255), rng.gen_range(0..=255), rng.gen_range(0..=255))
+    }
+}
+
+pub trait Displayable {
+    fn display(&mut self, x: i32, y: i32, color: raster::Color);
+}
+
+#[derive(Clone, Copy)]
+pub struct Point {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl Point {
+    pub fn new(x: i32, y: i32) -> Self {
+        Point { x, y }
+    }
+
+    pub fn random(width: i32, height: i32) -> Self {
+        Point {
+            x: rand::thread_rng().gen_range(0..=width),
+            y: rand::thread_rng().gen_range(0..=height),
+        }
+    }
+}
+
+impl Drawable for Point {
+    fn draw(&self, image: &mut Image) {
+        let color = Point::color();
+        image.display(self.x, self.y as i32, color);
+    }
+}
+
+pub struct Line {
+    pub a: Point,
+    pub b: Point,
+}
+
+#[allow(dead_code)]
+impl Line {
+    pub fn new(a: &Point, b: &Point) -> Self {
+        Line {
+            a: *a,
+            b: *b,
+        }
+    }
+
+    pub fn random(width: i32, height: i32) -> Self {
+        Line {
+            a: Point::random(width, height),
+            b: Point::random(width, height),
+        }
+    }
+}
+
+impl Drawable for Line {
+    fn draw(&self, image: &mut Image) {
+        draw_line(image, &self.a, &self.b, Line::color())
+    }
+}
+fn draw_line(image: &mut Image, a: &Point, b: &Point, color: Color) {
+    let p = i32::max((a.x - b.x).abs(), (a.y - b.y).abs());
+    let x_inc = ((b.x - a.x) as f32) / (p as f32);
+    let y_inc = ((b.y - a.y) as f32) / (p as f32);
+
+    let mut x = a.x as f32;
+    let mut y = a.y as f32;
+    for _ in 0..=p {
+        image.display(x.round() as i32, y.round() as i32, color.clone());
+        x += x_inc;
+        y += y_inc;
+    }
+}
+
+#[derive(Clone, Copy)]
+pub struct Triangle {
+    pub a: Point,
+    pub b: Point,
+    pub c: Point,
+}
+
+impl Triangle {
+    pub fn new(a: &Point, b: &Point, c: &Point) -> Self {
+        Triangle {
+            a: *a,
+            b: *b,
+            c: *c,
+        }
+    }
+}
+impl Drawable for Triangle {
+    fn draw(&self, image: &mut Image) {
+        let color = Triangle::color();
+        draw_line(image, &self.a, &self.c, color.clone());
+        draw_line(image, &self.a, &self.b, color.clone());
+        draw_line(image, &self.b, &self.c, color.clone());
+    }
+}
+
+#[derive(Clone)]
+pub struct Rectangle {
+    pub a: Point,
+    pub c: Point,
+}
+
+impl Rectangle {
+    pub fn new(a: &Point, c: &Point) -> Self {
+        Rectangle { a: *a, c: *c }
+    }
+}
+
+impl Drawable for Rectangle {
+    fn draw(&self, image: &mut Image) {
+        let b = Point::new(self.c.x, self.a.y);
+        let d = Point::new(self.a.x, self.c.y);
+        let color = Rectangle::color();
+        draw_line(image, &self.a, &b, color.clone());
+        draw_line(image, &b, &self.c, color.clone());
+        draw_line(image, &self.c, &d, color.clone());
+        draw_line(image, &d, &self.a, color.clone());
+    }
+}
+
+pub struct Circle {
+    pub center: Point,
+    pub radius: i32,
+}
+
+impl Circle {
+    pub fn new(center: &Point, r: i32) -> Self {
+        Circle { center: center.clone(), radius: r }
+    }
+
+    pub fn random(width: i32, height: i32) -> Self {
+        let center = Point::random(width, height);
+        let radius = rand::thread_rng().gen_range(0..=width / 2);
+        Circle::new(&center, radius)
+    }
+}
+
+impl Drawable for Circle {
+        fn draw(&self, image: &mut Image) {
+        let radius = self.radius as f64;
+        let center_x = self.center.x as f64;
+        let center_y = self.center.y as f64;
+        let color = Circle::color();
+        let step = 0.01;
+
+        let mut angle: f64 = 0.0;
+        while angle < 360.0{
+            let x = (center_x + radius * angle.cos()) as i32;
+            let y = (center_y + radius * angle.sin()) as i32;
+            image.display(x, y, color.clone());
+            angle += step;
+        }
+    }
+}
+
