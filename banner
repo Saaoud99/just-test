@@ -1,0 +1,75 @@
+use std::{collections::HashMap, num::ParseFloatError};
+#[derive(Debug)]
+
+pub struct Flag {
+    short_hand: String,
+    long_hand:String,
+    desc:String,
+}
+
+impl<'a> Flag{
+    pub fn opt_flag(name: &'a str, d: &'a str) -> Self {
+        Self{
+            short_hand: name.to_string(),
+            long_hand:name.to_string(),
+            desc:d.to_string(),
+        }
+    }
+}
+
+pub type Callback = fn(&str, &str) -> Result<String, ParseFloatError>;
+
+pub struct FlagsHandler {
+    pub flags: HashMap<String, Callback>,
+}
+
+impl FlagsHandler {
+    pub fn add_flag(&mut self, flag: Flag, func: Callback) {
+        self.flags.insert(flag.long_hand, func);
+        self.flags.insert(flag.short_hand, func);
+        self.flags.insert(flag.desc, func);
+    }
+
+    pub fn exec_func(&self, input: &str, argv: &[&str]) -> Result<String, String> {
+        if input == "-d" || input == "--division"{
+            match div(argv[0], argv[1]){
+                Ok(stock)=>Ok(stock),
+                Err(e)=>Err(e.to_string())
+            }
+            //
+        }else{
+            match rem(argv[0], argv[1]){
+                Ok(stock)=>Ok(stock),
+                Err(e)=>Err(e.to_string())
+            }
+        }
+            
+    }
+
+}
+
+pub fn div(a: &str, b: &str) -> Result<String, ParseFloatError> {
+    match a.parse::<f64>(){
+        Ok(a)=> match b.parse::<f64>(){
+            Ok(b) =>{
+                let div = a/b;
+                Ok(div.to_string())
+            }
+            Err(e) => Err(e),
+        }
+        Err(e) => Err(e),
+    }
+}
+
+pub fn rem(a: &str, b: &str) -> Result<String, ParseFloatError> {
+    match a.parse::<f64>() {
+        Ok(a)=> match b.parse::<f64>() {
+            Ok(b) =>{
+                let div = a%b;
+                Ok(div.to_string())
+            }
+            Err(e) => Err(e),
+        }
+        Err(e) => Err(e),
+    }    
+}
