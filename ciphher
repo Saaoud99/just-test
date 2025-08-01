@@ -1,0 +1,32 @@
+#[derive(Debug, PartialEq)]
+pub struct CipherError {
+   pub  expected: String,
+}
+
+pub fn cipher(original: &str, ciphered: &str) -> Result<(), CipherError> {
+    let mut stock = String::new();
+    let mut res = 0;
+    for i in original.chars(){
+        if i >= 'a' && i <= 'z' || i >= 'A' && i <= 'Z'{
+
+            let  mut base= 'a' ;
+            if i.is_uppercase(){
+                base = 'A'
+            }
+            res = i as i32 - base as i32;
+            res = 25 - res;
+            res+= base as i32;
+            stock.push(res as u8 as char);
+        }else{
+            stock.push(i);
+        }
+    }
+    
+    if stock == ciphered{
+        Ok(())
+    }else{
+        Err(CipherError {
+                    expected: stock,
+                }) 
+    }
+}
