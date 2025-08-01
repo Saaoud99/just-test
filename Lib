@@ -1,0 +1,86 @@
+mod err;
+
+use std::error::Error;
+use std::fs;
+use json::{parse};
+pub use crate::err::*;
+use std::io::{Read};
+
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct Task {
+    pub id: u32,
+    pub description: String,
+    pub level: u32,
+}
+
+#[derive(Debug, Eq, PartialEq)]
+pub struct TodoList {
+    pub title: String,
+    pub tasks: Vec<Task>,
+}
+
+impl TodoList {
+    pub fn get_todo(path: &str) -> Result<TodoList, Box<dyn Error>> {
+        let mut file = fs::File::open(path).map_err(err::ReadErr::new)?;
+
+        let mut str_content = String::new();
+        file.read_to_string(&mut str_content).map_err(err::ReadErr::new)?;
+
+        if str_content.is_empty() {
+            return Err(Box::new(ParseErr::Empty));
+        }
+
+        let parsed = parse(&str_content).map_err(|err| err::ParseErr::Malformed(Box::new(err)))?;
+    
+        
+        let title = parsed["title"]
+            .as_str()
+            .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Missing or invalid title",
+            ))))?
+            .to_string();
+
+        if !parsed["tasks"].is_array() {
+            return Err(Box::new(err::ParseErr::Malformed(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "Missing or invalid tasks array",
+            )))));
+        }
+
+        if parsed["tasks"].len() == 0 {
+            return Err(Box::new(err::ParseErr::Empty));
+        }
+
+        let tasks = parsed["tasks"]
+            .members()
+            .map(|task| {
+                Ok(Task {
+                    id: task["id"]
+                        .as_u32()
+                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Missing or invalid task id",
+                        ))))?,
+                    description: task["description"]
+                        .as_str()
+                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Missing or invalid task description",
+                        ))))?
+                        .to_string(),
+                    level: task["level"]
+                        .as_u32()
+                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::InvalidData,
+                            "Missing or invalid task level",
+                        ))))?,
+                })
+            })
+            .collect::<Result<Vec<Task>, Box<dyn Error>>>()?;
+
+        Ok(TodoList { title, tasks })
+    }
+
+}
