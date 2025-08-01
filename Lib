@@ -1,13 +1,11 @@
-mod err;
+```rust
+pub mod err;
 
-use std::error::Error;
-use std::fs;
-use json::{parse};
-pub use crate::err::*;
-use std::io::{Read};
+pub use err::{ParseErr, ReadErr};
+use json::{JsonValue, parse};
+use std::{error::Error, fs};
 
-
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub struct Task {
     pub id: u32,
     pub description: String,
@@ -22,65 +20,35 @@ pub struct TodoList {
 
 impl TodoList {
     pub fn get_todo(path: &str) -> Result<TodoList, Box<dyn Error>> {
-        let mut file = fs::File::open(path).map_err(err::ReadErr::new)?;
+        // todo!()
 
-        let mut str_content = String::new();
-        file.read_to_string(&mut str_content).map_err(err::ReadErr::new)?;
+        let rf: String = fs::read_to_string(path).map_err(|e| ReadErr {
+            child_err: Box::new(e),
+        })?;
 
-        if str_content.is_empty() {
+        let j_val=
+            parse(&rf).map_err(|err| ParseErr::Malformed(Box::new(err)))?;
+
+        if rf.trim().is_empty() {
             return Err(Box::new(ParseErr::Empty));
         }
-
-        let parsed = parse(&str_content).map_err(|err| err::ParseErr::Malformed(Box::new(err)))?;
-    
-        
-        let title = parsed["title"]
-            .as_str()
-            .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Missing or invalid title",
-            ))))?
-            .to_string();
-
-        if !parsed["tasks"].is_array() {
-            return Err(Box::new(err::ParseErr::Malformed(Box::new(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Missing or invalid tasks array",
-            )))));
+        let title = &j_val["title"];
+        let tsk = &j_val["tasks"];
+        if tsk.is_empty() {
+            return Err(Box::new(ParseErr::Empty));
         }
-
-        if parsed["tasks"].len() == 0 {
-            return Err(Box::new(err::ParseErr::Empty));
-        }
-
-        let tasks = parsed["tasks"]
-            .members()
-            .map(|task| {
-                Ok(Task {
-                    id: task["id"]
-                        .as_u32()
-                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Missing or invalid task id",
-                        ))))?,
-                    description: task["description"]
-                        .as_str()
-                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Missing or invalid task description",
-                        ))))?
-                        .to_string(),
-                    level: task["level"]
-                        .as_u32()
-                        .ok_or_else(|| err::ParseErr::Malformed(Box::new(std::io::Error::new(
-                            std::io::ErrorKind::InvalidData,
-                            "Missing or invalid task level",
-                        ))))?,
-                })
+        let mut final_tsk: Vec<Task> = vec![];
+        for t in tsk.members() {
+            final_tsk.push(Task {
+                id: t["id"].as_u32().unwrap(),
+                description: t["description"].as_str().unwrap().to_string(),
+                level: t["level"].as_u32().unwrap(),
             })
-            .collect::<Result<Vec<Task>, Box<dyn Error>>>()?;
-
-        Ok(TodoList { title, tasks })
+        }
+        Ok(TodoList {
+            title: title.to_string(),
+            tasks: final_tsk,
+        })
     }
-
 }
+```
