@@ -1,0 +1,64 @@
+```rs
+mod mall;
+pub use mall::*;
+use std::collections::HashMap;
+
+pub fn biggest_store(mall: &Mall) -> (String, Store) {
+    let mut max_squre_metre = 0;
+    let mut biggest_store: Option<(String, Store)> = None;
+    for (_, floor) in &mall.floors {
+        for (store_name, store) in &floor.stores {
+            if store.square_meters > max_squre_metre {
+                max_squre_metre = store.square_meters;
+                biggest_store = Some((store_name.clone(), store.clone()));
+            }
+        }
+    }
+    biggest_store.expect("the mall contain one store")
+}
+
+pub fn highest_paid_employee(mall: &Mall) -> Vec<(&str, Employee)> {
+    let mut highest_salary = 0.0;
+    let mut employee_salary: Vec<(&str, Employee)> = Vec::new();
+    for floor in &mall.floors {
+        for store in &floor.1.stores {
+            for employee in &store.1.employees {
+                if employee.1.salary > highest_salary {
+                    highest_salary = employee.1.salary;
+                    employee_salary = vec![(&employee.0, *employee.1)];
+                } else if employee.1.salary == highest_salary {
+                    employee_salary.push((&employee.0, *employee.1));
+                }
+            }
+        }
+    }
+    return employee_salary;
+}
+
+pub fn nbr_of_employees(mall: &Mall) -> usize {
+    let mut total_employees = 0;
+
+    total_employees += mall.guards.len();
+
+    for (_, floor) in &mall.floors {
+        for (_, store) in &floor.stores {
+            total_employees += store.employees.len();
+        }
+    }
+    total_employees
+}
+
+pub fn check_for_securities(mall: &mut Mall, available_guards: HashMap<String, Guard>) {
+    let mut total_meters = 0;
+    for floor in &mall.floors {
+        total_meters += floor.1.size_limit;
+    }
+    let mut required_guards = total_meters / 200 - (mall.guards.len() as u64);
+    for (name, guard) in &available_guards {
+        if required_guards > 0 {
+        mall.hire_guard(name, *guard);           required_guards -= 1;
+}
+   }
+}
+
+```
