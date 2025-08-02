@@ -1,0 +1,80 @@
+mod mall;
+pub use mall::*;
+use std::collections::HashMap;
+
+pub fn biggest_store(m : &Mall) -> (String, Store){
+    let mut max = 0;
+    let mut ret = ("".to_string(), Store::new(HashMap::<String, Employee>::new(), 0));
+    for  floor in m.floors.values(){
+        for  (name, store) in &floor.stores{
+            if store.square_meters > max {
+                max = store.square_meters;
+                ret = (name.to_string(), store.clone())
+            }
+        }
+    }
+    ret
+}
+
+
+pub fn highest_paid_employee(m : &Mall) -> Vec<(String, Employee)>{
+    let mut res = Vec::new();
+    let mut max = 0.;
+    for  floor in m.floors.values() {
+        for store in floor.stores.values() {
+            for (name, employee) in &store.employees {
+                if employee.salary > max {
+                    max = employee.salary;
+                    res.clear();
+                    res.push((name.clone(), employee.clone()));
+                } else if employee.salary == max {
+                    res.push((name.clone(), employee.clone()));
+                } 
+            }
+        }
+    }
+    res
+}
+
+pub fn nbr_of_employees(m : &Mall) -> usize {
+    let mut max = 0;
+    for  floor in m.floors.values() {
+        for store in floor.stores.values() {
+            max += store.employees.len()
+        }
+    }
+    max+ m.guards.len()
+}
+
+pub fn check_for_securities(m :  &mut Mall, gards: HashMap::<String, Guard>) {
+    let mut size = 0;
+
+    for  floor in m.floors.values() {
+        size += floor.size_limit
+    } 
+    let mut stock = ((size as f64/ 200.).ceil()) as usize  - m.guards.len();
+
+    for (name, gard) in &gards {
+        if stock == 0{
+            break
+        }
+        m.hire_guard(name, *gard);
+        stock-=1;
+    }
+    
+}
+
+pub fn cut_or_raise(m : &mut Mall){
+
+    for  floor in m.floors.values_mut() {
+        for store in floor.stores.values_mut() {
+            for employee in store.employees.values_mut(){
+                if employee.working_hours.1 - employee.working_hours.0 >= 10 { 
+                    employee.raise(0.1* employee.salary)
+                } else {
+                    employee.cut(0.1* employee.salary)
+                }
+            }
+        }
+    }
+}
