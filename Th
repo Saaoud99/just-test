@@ -1,0 +1,25 @@
+```rs
+use edit_distance::*;
+use convert_case::{Case, Casing};
+
+
+pub fn expected_variable(to_compare: &str, expected: &str) -> Option<String> {
+    let l_t = String::from(to_compare).to_lowercase(); 
+    let l_e = String::from(expected).to_lowercase(); 
+
+
+    if l_t.to_case(Case::Camel) != l_t && l_t.to_case(Case::Snake) != l_t {
+        return None;
+    }
+
+    let n = edit_distance(&l_t, &l_e);
+
+    let perc = 100 - (100 * n as i32 / l_e.len() as i32);
+    println!("{perc}, {n}, {}", l_e.chars().count());
+
+    match perc > 50 {
+        true => Some(format!("{}%", perc)),
+        false => None
+    }
+}
+```
