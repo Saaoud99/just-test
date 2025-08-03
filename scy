@@ -1,0 +1,23 @@
+pub fn scytale_cipher(message: &str, i: usize) -> String {
+    let mut matrix: Vec<Vec<char>> = Vec::new();
+    let mut res = String::new();
+    for id in 0..(message.len() as f64 / i as f64).ceil() as usize {
+        let mut array = Vec::new();
+        for index in i * id..(id + 1) * i  {
+            if index >= message.len() {
+                array.push(' ');
+               continue;
+            }
+            array.push(message.chars().nth(index).unwrap());
+        }
+        matrix.push(array);
+    }
+    println!("{:?}", matrix);
+    for id in 0..i {
+        for arr in &matrix {
+                res.push(arr[id]);
+        }
+    }
+
+    res.trim().to_string()
+}
