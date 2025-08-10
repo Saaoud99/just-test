@@ -1,0 +1,212 @@
+#[derive(Debug, PartialEq, Eq, Clone, PartialOrd, Ord)]
+pub enum Antigen {
+    A,
+    AB,
+    B,
+    O,
+}
+use Antigen::*;
+
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
+pub enum RhFactor {
+    Positive,
+    Negative,
+}
+
+use RhFactor::*;
+
+#[derive(PartialEq, Eq, PartialOrd)]
+pub struct BloodType {
+    pub antigen: Antigen,
+    pub rh_factor: RhFactor,
+}
+
+use std::fmt::Formatter;
+
+use std::cmp::Ord;
+
+use std::str::FromStr;
+
+impl FromStr for Antigen {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "A" => Ok(A),
+            "B" => Ok(B),
+            "AB" => Ok(AB),
+            "O" => Ok(O),
+            _ => Err("".to_string()),
+        }
+    }
+}
+
+impl FromStr for RhFactor {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "-" => Ok(Negative),
+            "+" => Ok(Positive),
+            _ => Err("".to_string()),
+        }
+    }
+}
+
+impl Ord for BloodType {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match self.rh_factor.cmp(&other.rh_factor) {
+            std::cmp::Ordering::Equal => self.antigen.cmp(&other.antigen),
+            ord => ord,
+        }
+    }
+}
+
+impl FromStr for BloodType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (mut types, mut rh_fact) = ("", "");
+        if s.contains("AB") {
+            (types, rh_fact) = s.split_at(2)
+        } else {
+            (types, rh_fact) = s.split_at(1)
+        }
+        if let Ok(blood) = types.parse::<Antigen>() {
+            if let Ok(rh) = rh_fact.parse::<RhFactor>() {
+                return Ok(BloodType {
+                    rh_factor: rh,
+                    antigen: blood,
+                });
+            } else {
+                return Err("".to_string());
+            }
+        } else {
+            return Err("".to_string());
+        }
+    }
+}
+
+use std::fmt::{self, Debug};
+
+impl Debug for BloodType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        if let Err(e) = match self.antigen {
+            A => write!(f, "A"),
+            B => write!(f, "B"),
+            AB => write!(f, "AB"),
+            O => write!(f, "O"),
+        } {
+            return Err(e);
+        }
+
+        match self.rh_factor {
+            Positive => write!(f, "+"),
+            Negative => write!(f, "-"),
+        }
+    }
+}
+
+// const  ALL_Type : Vec<BloodType>= vec![
+//     BloodType {
+//         antigen : A,
+//         rh_factor : Positive
+//     },
+// ];
+
+impl BloodType {
+    pub fn can_receive_from(&self, other: &Self) -> bool {
+        let can_give_type = match (other.antigen.clone(), self.antigen.clone()) {
+            (O, _) => true,
+            (A, A) | (A, AB) => true,
+            (B, B) | (B, AB) => true,
+            (AB, AB) => true,
+            _ => false,
+        };
+        let rh_give = match (other.rh_factor.clone(), self.rh_factor.clone()) {
+            (Negative, _) => true,
+            (Positive, Positive) => true,
+            _ => false,
+        };
+        can_give_type && rh_give
+    }
+
+    pub fn donors(&self) -> Vec<Self> {
+        let all_type = vec![
+            BloodType {
+                antigen: A,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: A,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: B,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: B,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: AB,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: AB,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: O,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: O,
+                rh_factor: Negative,
+            },
+        ];
+        all_type
+            .into_iter()
+            .filter(|c| self.can_receive_from(c))
+            .collect()
+    }
+
+    pub fn recipients(&self) -> Vec<BloodType> {
+        let all_type = vec![
+            BloodType {
+                antigen: A,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: A,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: B,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: B,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: AB,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: AB,
+                rh_factor: Negative,
+            },
+            BloodType {
+                antigen: O,
+                rh_factor: Positive,
+            },
+            BloodType {
+                antigen: O,
+                rh_factor: Negative,
+            },
+        ];
+        all_type
+            .into_iter()
+            .filter(|c| c.can_receive_from(self))
+            .collect()
+    }
+}
